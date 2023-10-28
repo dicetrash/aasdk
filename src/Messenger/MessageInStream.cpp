@@ -51,6 +51,7 @@ void MessageInStream::startReceive(ReceivePromise::Pointer promise)
 
             transport_->receive(FrameHeader::getSizeOf(), std::move(transportPromise));
         } else {
+            AASDK_LOG(debug) << "operation in progress";
             promise->reject(error::Error(error::ErrorCode::OPERATION_IN_PROGRESS));
         }
     });
@@ -78,12 +79,11 @@ void MessageInStream::receiveFrameHeaderHandler(const common::DataConstBuffer& b
             message_ = std::make_shared<Message>(frameHeader.getChannelId(), frameHeader.getEncryptionType(), frameHeader.getMessageType());
         }
     } else {
-        AASDK_LOG(debug) << "[MessageInStream] Could not find existing message.";
-        // No Message Found in Buffers and this is a middle or last frame, this an error.
-        // Still need to process the frame, but we will not resolve at the end.
         message_ = std::make_shared<Message>(frameHeader.getChannelId(), frameHeader.getEncryptionType(), frameHeader.getMessageType());
         if (frameHeader.getType() == FrameType::MIDDLE || frameHeader.getType() == FrameType::LAST) {
-            // This is an error
+            AASDK_LOG(debug) << "[MessageInStream] Could not find existing message.";
+            // No Message Found in Buffers and this is a middle or last frame, this an error.
+            // Still need to process the frame, but we will not resolve at the end.
             isValidFrame_ = false;
         }
     }
